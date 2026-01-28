@@ -1,7 +1,5 @@
 fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
-paddleocr>=3.3.3
-paddlepaddle>=3.2.2,<3.3.0
 pillow>=10.0.1
 numpy>=2.0.0
 opencv-python>=4.8.1.78
@@ -20,3 +18,10 @@ mypy>=1.10.0
 prometheus-client>=0.21.0
 structlog>=24.0.0
 pillow-heif>=1.2.0
+# TrOCR dependencies (Microsoft's transformer-based handwriting recognition)
+transformers>=4.40.0
+torch>=2.2.0
+sentencepiece>=0.2.0
+# Optional: PaddleOCR (alternative engine)
+# paddleocr>=3.3.3
+# paddlepaddle>=3.2.2,<3.3.0

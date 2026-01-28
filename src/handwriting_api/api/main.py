@@ -15,8 +15,8 @@ import prometheus_client
 from prometheus_client import Counter, Histogram, Gauge
 
 from ..config.settings import settings
-# Import the PaddleOCR engine
-from ..core.ocr_engine import OCREngine
+# Import the TrOCR engine (Microsoft's transformer-based handwriting recognition)
+from ..core.ocr_engine_trocr import TrOCREngine as OCREngine
 from ..utils.image_validator import ImageValidator, ImageValidationError
 from .models import (
     OCRResponse, 
