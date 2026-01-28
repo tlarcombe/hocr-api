@@ -1,0 +1,10 @@
+INFO:     Started server process [495312]
+INFO:     Waiting for application startup.
+{"available_languages": ["afr", "osd"], "event": "Language 'en' not available, using first available language", "logger": "handwriting_api.core.ocr_engine_tesseract", "level": "warning", "timestamp": "2026-01-28T12:36:06.627551Z"}
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8002 (Press CTRL+C to quit)
+INFO:     127.0.0.1:33336 - "POST /recognize HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [495312]

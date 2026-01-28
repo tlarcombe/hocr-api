@@ -1,0 +1,11 @@
+INFO:     Started server process [505768]
+INFO:     Waiting for application startup.
+Downloading detection model, please wait. This may take several minutes depending upon your network connection.
+Downloading recognition model, please wait. This may take several minutes depending upon your network connection.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8004 (Press CTRL+C to quit)
+/home/tlarcombe/projects/kimi1/venv/lib/python3.13/site-packages/torch/utils/data/dataloader.py:775: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  super().__init__(loader)
+INFO:     127.0.0.1:44002 - "POST /recognize HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57934 - "POST /recognize HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35772 - "POST /recognize HTTP/1.1" 200 OK

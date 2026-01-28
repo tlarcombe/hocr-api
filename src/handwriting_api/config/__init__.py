@@ -1,0 +1,1 @@
+"""Configuration module for handwriting recognition API."""
