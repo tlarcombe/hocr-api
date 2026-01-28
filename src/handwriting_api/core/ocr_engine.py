@@ -101,10 +101,7 @@ class OCREngine:
             # Enhance sharpness
             sharpener = ImageEnhance.Sharpness(image)
             image = sharpener.enhance(1.1)
-            
-            # Convert to grayscale for better OCR results
-            image = ImageOps.grayscale(image)
-            
+
             # Resize if image is too small (PaddleOCR works better with larger images)
             width, height = image.size
             if width < 800 or height < 600:
@@ -113,9 +110,9 @@ class OCREngine:
                 new_height = int(height * scale_factor)
                 image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
             
-            # Apply noise reduction
+            # Apply noise reduction (for RGB images)
             image_array = np.array(image)
-            denoised = cv2.fastNlMeansDenoising(image_array)
+            denoised = cv2.fastNlMeansDenoisingColored(image_array, None, 10, 10, 7, 21)
             image = Image.fromarray(denoised)
             
             logger.debug("Image preprocessing completed", original_size=(width, height), new_size=image.size)
@@ -156,28 +153,35 @@ class OCREngine:
                 text_rec_score_thresh=0.5,
                 return_word_box=False
             )
-            
-            if not ocr_results or not ocr_results[0]:
+
+            if not ocr_results:
                 logger.info("No text detected in image")
                 return []
-            
+
+            ocr_result = ocr_results[0]
+            # PaddleOCR 3.x returns OCRResult objects - access data via json property
+            json_data = ocr_result.json if hasattr(ocr_result, 'json') else ocr_result
+            res = json_data.get('res', json_data) if isinstance(json_data, dict) else {}
+            rec_texts = res.get('rec_texts', [])
+            rec_scores = res.get('rec_scores', [])
+            dt_polys = res.get('dt_polys', [])
+
+            if not rec_texts:
+                logger.info("No text detected in image")
+                return []
+
             # Process results
             results = []
-            for line in ocr_results[0]:
-                if line and len(line) >= 2:
-                    coordinates = line[0]  # Bounding box coordinates
-                    text_info = line[1]    # Text and confidence
-                    
-                    if len(text_info) >= 2:
-                        text = str(text_info[0])
-                        confidence = float(text_info[1]) if return_confidence else None
-                        
-                        result = {
-                            "text": text,
-                            "confidence": confidence,
-                            "coordinates": coordinates,
-                        }
-                        results.append(result)
+            for i, text in enumerate(rec_texts):
+                confidence = float(rec_scores[i]) if return_confidence and i < len(rec_scores) else None
+                coordinates = dt_polys[i] if i < len(dt_polys) else []
+
+                result = {
+                    "text": str(text),
+                    "confidence": confidence,
+                    "coordinates": coordinates,
+                }
+                results.append(result)
             
             processing_time = time.time() - start_time
             logger.info(
@@ -221,29 +225,47 @@ class OCREngine:
     
     def _group_text_by_lines(self, results: List[Dict[str, Any]]) -> List[List[str]]:
         """Group detected text by approximate line positions.
-        
+
         Args:
             results: OCR results with coordinates
-            
+
         Returns:
             List of text lines
         """
         if not results:
             return []
-        
+
+        def get_min_y(coords):
+            """Get minimum y-coordinate from polygon coordinates."""
+            if not coords:
+                return 0
+            return min(point[1] for point in coords if len(point) >= 2)
+
+        def get_avg_y(coords):
+            """Get average y-coordinate from polygon coordinates."""
+            if not coords:
+                return 0
+            y_coords = [point[1] for point in coords if len(point) >= 2]
+            return sum(y_coords) / len(y_coords) if y_coords else 0
+
+        def get_min_x(coords):
+            """Get minimum x-coordinate from polygon coordinates."""
+            if not coords:
+                return 0
+            return min(point[0] for point in coords if len(point) >= 2)
+
         # Sort results by vertical position (y-coordinate)
-        sorted_results = sorted(results, key=lambda r: min(coord[1] for coord in r["coordinates"]))
-        
+        sorted_results = sorted(results, key=lambda r: get_min_y(r.get("coordinates", [])))
+
         lines = []
         current_line = []
         current_y = None
         line_threshold = 50  # Pixels threshold for line grouping
-        
+
         for result in sorted_results:
-            # Calculate average y-coordinate of the bounding box
-            y_coords = [coord[1] for coord in result["coordinates"]]
-            avg_y = sum(y_coords) / len(y_coords)
-            
+            coords = result.get("coordinates", [])
+            avg_y = get_avg_y(coords)
+
             if current_y is None or abs(avg_y - current_y) <= line_threshold:
                 current_line.append(result)
                 if current_y is None:
@@ -251,17 +273,17 @@ class OCREngine:
             else:
                 # Sort current line by x-coordinate and extract text
                 if current_line:
-                    current_line.sort(key=lambda r: min(coord[0] for coord in r["coordinates"]))
+                    current_line.sort(key=lambda r: get_min_x(r.get("coordinates", [])))
                     lines.append([r["text"] for r in current_line])
-                
+
                 current_line = [result]
                 current_y = avg_y
-        
+
         # Add the last line
         if current_line:
-            current_line.sort(key=lambda r: min(coord[0] for coord in r["coordinates"]))
+            current_line.sort(key=lambda r: get_min_x(r.get("coordinates", [])))
             lines.append([r["text"] for r in current_line])
-        
+
         return lines
     
     def get_model_info(self) -> Dict[str, Any]:

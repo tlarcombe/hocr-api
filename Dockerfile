@@ -1,5 +1,5 @@
 # Multi-stage Docker build for Handwriting Recognition API
-FROM python:3.11-slim as builder
+FROM python:3.13-slim as builder
 
 # Install system dependencies with stable package versions
 RUN apt-get update && apt-get install -y \
@@ -31,7 +31,7 @@ RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
 # Production stage
-FROM python:3.11-slim as production
+FROM python:3.13-slim as production
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
@@ -57,7 +57,7 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 WORKDIR /app
 
 # Copy installed packages from builder stage
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
@@ -91,7 +91,7 @@ CMD ["python", "-m", "uvicorn", "handwriting_api.api.main:app", "--host", "0.0.0
 
 
 # Development stage
-FROM python:3.11-slim as development
+FROM python:3.13-slim as development
 
 # Install development dependencies
 RUN apt-get update && apt-get install -y \
@@ -184,7 +184,7 @@ COPY requirements.txt pyproject.toml ./
 # Install Python dependencies with GPU support
 RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir paddlepaddle-gpu==2.5.1
+    pip install --no-cache-dir paddlepaddle-gpu>=3.3.0
 
 # Copy application code
 COPY src/ ./src/

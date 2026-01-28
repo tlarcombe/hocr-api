@@ -15,8 +15,8 @@ import prometheus_client
 from prometheus_client import Counter, Histogram, Gauge
 
 from ..config.settings import settings
-# Import the EasyOCR engine
-from ..core.ocr_engine_easyocr import EasyOCREngine as OCREngine
+# Import the PaddleOCR engine
+from ..core.ocr_engine import OCREngine
 from ..utils.image_validator import ImageValidator, ImageValidationError
 from .models import (
     OCRResponse, 
